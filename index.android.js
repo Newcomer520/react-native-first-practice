@@ -20,16 +20,20 @@ import { fetchMovies } from './redux/actions/movies'
 import getStore from './redux/create-store'
 import { connect, Provider } from 'react-redux'
 import { bindActionCreators } from 'redux'
-
+import { TYPES } from './redux/actions/movies'
+const { MOVIE_REQUEST_SUCCESS } = TYPES
 const MOCKED_MOVIES_DATA = [
   { title: 'Title', year: '2015', posters: { thumbnail: 'http://i.imgur.com/UePbdph.jpg' } },
 ]
 
 @connect(
-	state => ({ status: state.get('status'), movies: state.get('movies') }),
+	state => ({ status: state.status, movies: state.movies }),
 	dispatch => ({ actions: bindActionCreators({ fetchMovies }, dispatch) })
 )
 class AwesomeProject extends Component {
+	dataSource = new ListView.DataSource({
+		rowHasChanged: (row1, row2) => row1 !== row2,
+	});
 	componentDidMount() {
 		const { actions: { fetchMovies } } = this.props
 		fetchMovies()
@@ -56,11 +60,12 @@ class AwesomeProject extends Component {
 		)
 	}
 	render() {
-		// const movie = MOCKED_MOVIES_DATA[0]
-		return this.props.status !== 'MOVIE_REQUEST_SUCCESS'? this.renderLoadingView():
-		(
-			<ListView dataSource={this.props.movies} renderRow={this.renderMovie} style={styles.listView} />
-		)
+		if (this.props.status !== MOVIE_REQUEST_SUCCESS) {
+			return this.renderLoadingView()
+		} else {
+			const movies = this.dataSource.cloneWithRows(this.props.movies.toArray())
+			return <ListView dataSource={movies} renderRow={this.renderMovie} style={styles.listView} />
+		}		
 	}
 }
 
